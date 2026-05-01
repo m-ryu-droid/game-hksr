@@ -2,163 +2,174 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Dungeon Crawler v7 - Synergy & Enchant</title>
+    <title>ハクスラ・ダンジョン：エリア＆強化</title>
     <style>
         :root { 
-            --bg: #09090b; --panel: #16161e; --accent: #7aa2f7;
-            --common: #a9b1d6; --rare: #2ac3de; --epic: #bb9af7; --legend: #ff9e64; --set: #73daca;
+            --bg: #0a0a0c; --panel: #1a1a20; --accent: #4cc9f0;
+            --common: #a9b1d6; --rare: #4895ef; --epic: #7209b7; --legend: #f72585; --set: #4cc9f0;
         }
-        body { background: var(--bg); color: #c0caf5; font-family: 'Consolas', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        #game-layout { display: grid; grid-template-columns: 320px 360px 360px; gap: 15px; padding: 20px; width: 1100px; }
+        body { background: var(--bg); color: #c0caf5; font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        #game-layout { display: grid; grid-template-columns: 320px 380px 380px; gap: 15px; padding: 20px; width: 1100px; }
         .panel { background: var(--panel); border-radius: 12px; padding: 15px; border: 1px solid #292e42; }
-        h3 { margin: 0 0 10px 0; font-size: 0.85em; color: var(--accent); border-bottom: 1px solid #292e42; padding-bottom: 5px; text-transform: uppercase; }
+        h3 { margin: 0 0 10px 0; font-size: 0.9em; color: var(--accent); border-bottom: 2px solid #292e42; padding-bottom: 5px; }
 
-        /* ステータス */
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.8em; }
-        .stat-item { background: #1a1b26; padding: 4px 8px; border-radius: 4px; display: flex; justify-content: space-between; }
-        .bonus { color: var(--set); font-weight: bold; }
+        /* エリア選択 */
+        .area-sel { display: flex; gap: 5px; margin-bottom: 10px; }
+        .area-btn { flex: 1; font-size: 0.7em; padding: 5px; background: #333; color: #fff; cursor: pointer; border-radius: 4px; border: none; }
+        .area-btn.active { background: var(--accent); color: #000; font-weight: bold; }
 
-        /* バトルエリア */
-        #battle-area { text-align: center; background: #000; border-radius: 10px; padding: 15px; border: 1px solid var(--accent); }
-        .hp-bar { background: #24283b; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
-        #enemy-hp-fill { background: #f7768e; width: 100%; height: 100%; transition: width 0.15s; }
+        /* ステータス & 鍛冶屋 */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.85em; }
+        .stat-item { background: #24283b; padding: 6px 10px; border-radius: 6px; display: flex; justify-content: space-between; }
+        .forge-panel { margin-top: 15px; padding: 10px; background: #2f334d; border-radius: 8px; font-size: 0.8em; }
+
+        /* 戦闘エリア */
+        #battle-area { text-align: center; background: #000; border-radius: 10px; padding: 20px; border: 2px solid #333; }
+        .hp-bar { background: #333; width: 100%; height: 12px; border-radius: 6px; overflow: hidden; margin-top: 10px; }
+        #enemy-hp-fill { background: #f72585; width: 100%; height: 100%; transition: width 0.15s; }
 
         /* インベントリ・装備 */
-        #inventory-list { height: 480px; overflow-y: auto; }
-        .item-card { margin-bottom: 8px; padding: 10px; border-radius: 8px; border: 1px solid #292e42; font-size: 0.8em; }
-        .rarity-legend { border: 1px solid var(--legend); box-shadow: 0 0 8px rgba(255, 158, 100, 0.3); }
+        #inventory-list { height: 450px; overflow-y: auto; }
+        .item-card { margin-bottom: 10px; padding: 12px; border-radius: 8px; background: #24283b; border: 1px solid #414868; font-size: 0.8em; }
+        .rarity-legend { border: 2px solid var(--legend); box-shadow: 0 0 10px rgba(247, 37, 133, 0.3); }
         
-        .enchant-name { color: var(--accent); font-style: italic; font-weight: bold; }
-        .set-name { color: var(--set); font-size: 0.85em; font-weight: bold; }
-        .opt-tag { font-size: 0.8em; color: #9ece6a; margin-right: 5px; }
-        
-        button { cursor: pointer; border: none; border-radius: 4px; padding: 6px; font-weight: bold; }
-        .btn-main { background: var(--accent); color: #1a1b26; width: 100%; margin-top: 10px; padding: 12px; }
-        .btn-equip { background: #414868; color: #fff; }
-        .stop { background: #f7768e !important; }
+        .enchant-txt { color: #ff9e64; font-weight: bold; }
+        .set-txt { color: var(--set); font-weight: bold; }
+        .plus-txt { color: #4caf50; font-weight: bold; margin-left: 5px; }
 
-        #set-bonus-display { margin-top: 10px; font-size: 0.75em; color: var(--set); min-height: 40px; }
+        button { cursor: pointer; border: none; border-radius: 6px; padding: 8px; font-weight: bold; transition: 0.2s; }
+        .btn-main { background: var(--accent); color: #000; width: 100%; margin-top: 10px; padding: 10px; }
+        .btn-equip { background: #4895ef; color: #fff; padding: 4px 10px; }
+        .btn-trash { background: #333; color: #aaa; margin-left: 5px; }
+        .stop { background: #f72585 !important; color: #fff; }
+
+        #game-log { height: 120px; overflow-y: scroll; background: #000; font-size: 0.7em; padding: 10px; margin-top: 10px; color: #9aa5ce; }
     </style>
 </head>
 <body>
 
-<h1>⚔️ SYNERGY & ENCHANT ⚔️</h1>
+<h1 style="text-shadow: 0 0 10px var(--accent);">⚒️ 鍛冶屋と未知の領域 ⚒️</h1>
 
 <div id="game-layout">
     <div class="panel">
-        <h3>📊 PLAYER STATS</h3>
-        <div class="stat-grid" id="stat-list">
-            </div>
+        <h3>📊 プレイヤー能力</h3>
+        <div class="stat-grid" id="stat-list"></div>
         
-        <h3 style="margin-top:20px;">💎 ACTIVE SET BONUS</h3>
-        <div id="set-bonus-display">なし</div>
-
-        <h3 style="margin-top:20px;">🛡️ EQUIPMENT</h3>
-        <div id="current-equips" style="font-size: 0.75em;">
-            <div id="eq-head"></div><div id="eq-body"></div><div id="eq-legs"></div><div id="eq-w1"></div>
+        <div class="forge-panel">
+            <b>⚒️ 鍛冶屋（装備の強化）</b><br>
+            不要な装備を捨てると「魔力の欠片」が手に入ります。それを使って今の装備を強化！<br>
+            所持欠片: <span id="fragment-count" style="color:var(--accent); font-weight:bold;">0</span>
         </div>
+
+        <h3 style="margin-top:15px;">🛡️ 現在の装備</h3>
+        <div id="current-equips" style="font-size: 0.75em;">
+            </div>
     </div>
 
     <div>
-        <div id="battle-area">
-            <div id="enemy-emoji" style="font-size: 4em;">🌲</div>
-            <div id="enemy-name" style="font-weight:bold;">探索待機中</div>
-            <div class="hp-bar"><div id="enemy-hp-fill"></div></div>
-            <div id="progress" style="font-size:0.7em; margin-top:10px;">STAGE 1 | NEXT BOSS: 0/10</div>
+        <div class="area-sel">
+            <button class="area-btn active" id="area-0" onclick="changeArea(0)">始まりの草原<br><small>[竜殺し]</small></button>
+            <button class="area-btn" id="area-1" onclick="changeArea(1)">影の沼地<br><small>[影の衣]</small></button>
+            <button class="area-btn" id="area-2" onclick="changeArea(2)">聖なる神殿<br><small>[守護者]</small></button>
         </div>
-        <button id="run-btn" class="btn-main" onclick="toggleAuto()">EXPLORE START</button>
-        <button class="btn-main" style="background:#24283b; color:#fff;" onclick="gacha()">NEW GAME (GACHA)</button>
-        <div id="game-log" style="height:150px; overflow-y:scroll; background:#000; font-size:0.7em; padding:10px; margin-top:10px; color:#565f89; border:1px solid #292e42;"></div>
+
+        <div id="battle-area">
+            <div id="enemy-emoji" style="font-size: 3em;">🐜</div>
+            <div id="enemy-name" style="font-weight:bold;">探索中...</div>
+            <div class="hp-bar"><div id="enemy-hp-fill"></div></div>
+            <div id="progress" style="font-size:0.75em; margin-top:8px;">ステージ 1 | ボスまで: 0/10</div>
+        </div>
+        <button id="run-btn" class="btn-main" onclick="toggleAuto()">🌲 探索を開始する</button>
+        <button class="btn-main" style="background:#24283b; color:#fff; font-size: 0.7em;" onclick="gacha()">リセット</button>
+        <div id="game-log"></div>
     </div>
 
     <div class="panel">
-        <h3>📦 INVENTORY (<span id="bag-count">0/12</span>)</h3>
+        <h3>📦 カバン (<span id="bag-count">0/12</span>)</h3>
         <div id="inventory-list"></div>
     </div>
 </div>
 
 <script>
-    const JOBS = { "戦士": { hp:250, atk:20, crit:5, spd:1200 }, "魔導師": { hp:120, atk:45, crit:15, spd:1500 }, "暗殺者": { hp:150, atk:30, crit:25, spd:800 } };
-    const ENCHANTS = [
-        { n: "破壊の", atk: 2.0 }, { n: "迅速の", spd: 0.6 }, { n: "不滅の", hp: 3.0 }, { n: "幸運の", crit: 20 }, { n: "凡庸な", atk: 1.1 }
+    const JOBS = { "戦士": { hp:350, atk:30, spd:1200 }, "魔導師": { hp:180, atk:60, spd:1500 }, "暗殺者": { hp:200, atk:40, spd:900 } };
+    const ENCHANTS = [{ n: "破壊の", atk: 1.5 }, { n: "迅速の", spd: 0.7 }, { n: "不滅の", hp: 2.0 }];
+    const AREAS = [
+        { name: "始まりの草原", set: "竜殺し", enemies: ["🐜", "🐛"] },
+        { name: "影の沼地", set: "影の衣", enemies: ["🐍", "🦎"] },
+        { name: "聖なる神殿", set: "守護者", enemies: ["🛡️", "⚔️"] }
     ];
-    const SET_DEFS = {
-        "ドラゴンスレイヤー": "ATK +100",
-        "影の軍団": "CRIT +40",
-        "聖騎士の誓い": "HP +500"
-    };
 
-    let p = { lv: 1, job: "", equips: { head:null, body:null, legs:null, w1:null } };
-    let inv = [], isAuto = false, timer = null, enemy = null, state = { stage: 1, kills: 0 };
+    let p = { lv: 1, job: "", fragments: 0, equips: { head:null, body:null, legs:null, w1:null } };
+    let inv = [], isAuto = false, timer = null, enemy = null, state = { areaIdx: 0, stage: 1, kills: 0 };
+
+    function changeArea(idx) {
+        state.areaIdx = idx;
+        state.stage = 1; state.kills = 0; enemy = null;
+        document.querySelectorAll('.area-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
+        log(`🚩 エリアを [${AREAS[idx].name}] に変更しました。`);
+        updateUI();
+    }
 
     function getStats() {
         if (!p.job) return {};
-        let s = { ...JOBS[p.job], hp: JOBS[p.job].hp + p.lv*30, atk: JOBS[p.job].atk + p.lv*8 };
+        let s = { ...JOBS[p.job], hp: JOBS[p.job].hp + p.lv*50, atk: JOBS[p.job].atk + p.lv*12, crit: 5 };
         let setCounts = {};
-
         Object.values(p.equips).forEach(eq => {
             if (!eq) return;
-            // 基本オプション
-            eq.opts.forEach(o => {
-                if(o.type==='ATK') s.atk += o.val;
-                if(o.type==='HP') s.hp += o.val*10;
-                if(o.type==='CRIT') s.crit += o.val;
-            });
-            // エンチャント倍率
+            let mult = 1 + (eq.plus * 0.1); // 1強化ごとに10%加算
+            let val = Math.floor(eq.atk * mult);
+            s.atk += val;
             if(eq.enchant.atk) s.atk *= eq.enchant.atk;
             if(eq.enchant.spd) s.spd *= eq.enchant.spd;
             if(eq.enchant.hp) s.hp *= eq.enchant.hp;
-            if(eq.enchant.crit) s.crit += eq.enchant.crit;
-            // セットカウント
             setCounts[eq.set] = (setCounts[eq.set] || 0) + 1;
         });
-
-        // セットボーナス適用 (2点以上)
-        let activeSets = [];
+        // セットボーナス
         for(let name in setCounts) {
             if(setCounts[name] >= 2) {
-                activeSets.push(`${name} (${setCounts[name]})`);
-                if(name === "ドラゴンスレイヤー") s.atk += 100;
-                if(name === "影の軍団") s.crit += 40;
-                if(name === "聖騎士の誓い") s.hp += 500;
+                if(name === "竜殺し") s.atk += 200;
+                if(name === "影の衣") s.crit += 50;
+                if(name === "守護者") s.hp += 1500;
             }
         }
-        return { ...s, activeSets };
+        return s;
     }
 
     function dropItem() {
         if (inv.length >= 12) return;
         const part = ["head", "body", "legs", "w1"][Math.floor(Math.random()*4)];
-        const rarityRoll = Math.random();
-        let rarity = "common";
-        if(rarityRoll < 0.1) rarity = "legend";
-        else if(rarityRoll < 0.3) rarity = "epic";
-
         const enchant = ENCHANTS[Math.floor(Math.random()*ENCHANTS.length)];
-        const set = Object.keys(SET_DEFS)[Math.floor(Math.random()*3)];
-        
-        let opts = [{type: 'ATK', val: Math.floor(Math.random()*10 + state.stage*5)}];
-        if(rarity !== "common") opts.push({type: 'HP', val: Math.floor(Math.random()*20 + state.stage*10)});
-
-        inv.push({ id: Date.now(), part, rarity, enchant, set, opts, name: part.toUpperCase() });
+        const set = AREAS[state.areaIdx].set; // 現在のエリアのセットが落ちやすい
+        inv.push({ id: Date.now(), part, rarity: Math.random()<0.1?'legend':'common', enchant, set, atk: 10 + state.stage*5, plus: 0 });
         updateUI();
+    }
+
+    function upgrade(part) {
+        let eq = p.equips[part];
+        let cost = (eq.plus + 1) * 10;
+        if (p.fragments >= cost) {
+            p.fragments -= cost;
+            eq.plus++;
+            log(`⚒️ ${eq.enchant.n}${part}を +${eq.plus} に強化しました！`);
+            updateUI();
+        } else {
+            alert("欠片が足りません！（不要な装備を捨てて集めよう）");
+        }
     }
 
     function tick() {
         const stats = getStats();
         if(!enemy) {
-            enemy = { n: "モンスター", hp: 100 * state.stage, cur: 100 * state.stage, e: "👹" };
+            const area = AREAS[state.areaIdx];
+            enemy = { n: "魔物", hp: 150 * state.stage, cur: 150 * state.stage, e: area.enemies[Math.floor(Math.random()*2)] };
         }
         let dmg = Math.floor(stats.atk);
-        let critRoll = Math.random()*100 < stats.crit;
-        if(critRoll) dmg *= 2;
+        if(Math.random()*100 < stats.crit) dmg *= 2;
         enemy.cur -= dmg;
-        log(`${critRoll ? '⭐CRIT! ' : ''}${dmg} DMG!`);
-
         if(enemy.cur <= 0) {
             state.kills++;
             if(Math.random() < 0.5) dropItem();
-            if(state.kills >= 10) { state.stage++; state.kills = 0; log("🚩 AREA UP!"); }
+            if(state.kills >= 10) { state.stage++; state.kills = 0; }
             enemy = null;
         }
         updateUI();
@@ -167,54 +178,59 @@
     function toggleAuto() {
         if(!p.job) return;
         isAuto = !isAuto;
-        const btn = document.getElementById("run-btn");
-        if(isAuto) {
-            btn.innerText = "STOP EXPLORING"; btn.classList.add("stop");
-            timer = setInterval(tick, getStats().spd);
-        } else {
-            btn.innerText = "EXPLORE START"; btn.classList.remove("stop");
-            clearInterval(timer);
-        }
+        document.getElementById("run-btn").innerText = isAuto ? "🛑 探索中止" : "🌲 探索開始";
+        document.getElementById("run-btn").classList.toggle("stop", isAuto);
+        if(isAuto) timer = setInterval(tick, getStats().spd); else clearInterval(timer);
     }
 
     function updateUI() {
         if(!p.job) return;
         const s = getStats();
-        const statHTML = `
-            <div class="stat-item"><span>ATK</span><span class="stat-val">${Math.floor(s.atk)}</span></div>
+        document.getElementById("stat-list").innerHTML = `
+            <div class="stat-item"><span>攻撃力</span><span class="stat-val">${Math.floor(s.atk)}</span></div>
             <div class="stat-item"><span>HP</span><span class="stat-val">${Math.floor(s.hp)}</span></div>
-            <div class="stat-item"><span>CRIT</span><span class="stat-val">${s.crit}%</span></div>
-            <div class="stat-item"><span>SPD</span><span class="stat-val">${(s.spd/1000).toFixed(1)}s</span></div>
+            <div class="stat-item"><span>速度</span><span class="stat-val">${(s.spd/1000).toFixed(2)}s</span></div>
         `;
-        document.getElementById("stat-list").innerHTML = statHTML;
-        document.getElementById("set-bonus-display").innerHTML = s.activeSets.length ? s.activeSets.join("<br>") : "なし";
+        document.getElementById("fragment-count").innerText = p.fragments;
 
-        ["head", "body", "legs", "w1"].forEach(part => {
+        let eqHtml = "";
+        const pNames = {head:"頭", body:"体", legs:"脚", w1:"武器"};
+        Object.keys(pNames).forEach(part => {
             const eq = p.equips[part];
-            document.getElementById(`eq-${part}`).innerHTML = eq ? 
-                `<span class="enchant-name">${eq.enchant.n}</span> ${eq.name} <br><span class="set-name">[${eq.set}]</span>` : `${part.toUpperCase()}: なし`;
+            eqHtml += `<div class="equip-slot"><b>${pNames[part]}</b>: `;
+            if(eq) {
+                eqHtml += `<span class="enchant-txt">${eq.enchant.n}</span> <span class="plus-txt">+${eq.plus}</span><br>
+                <small class="set-txt">[${eq.set}]</small> <button onclick="upgrade('${part}')" style="padding:2px 5px; font-size:0.8em; margin-left:10px;">強化(${ (eq.plus+1)*10 })</button>`;
+            } else { eqHtml += "未装備"; }
+            eqHtml += `</div>`;
         });
+        document.getElementById("current-equips").innerHTML = eqHtml;
 
         if(enemy) {
             document.getElementById("enemy-name").innerText = enemy.n;
+            document.getElementById("enemy-emoji").innerText = enemy.e;
             document.getElementById("enemy-hp-fill").style.width = (enemy.cur/enemy.hp*100) + "%";
         }
-        document.getElementById("progress").innerText = `STAGE ${state.stage} | NEXT BOSS: ${state.kills}/10`;
+        document.getElementById("progress").innerText = `ステージ ${state.stage} | ボスまで: ${state.kills}/10`;
         document.getElementById("bag-count").innerText = `${inv.length}/12`;
 
         const list = document.getElementById("inventory-list");
         list.innerHTML = "";
         inv.forEach(i => {
             const d = document.createElement("div");
-            d.className = `item-card rarity-${i.rarity}`;
-            d.innerHTML = `
-                <span class="enchant-name">${i.enchant.n}</span> <b>${i.name}</b><br>
-                <span class="set-name">${i.set}</span><br>
-                <button class="btn-equip" onclick="equip(${i.id})">EQUIP</button>
-                <button style="background:#333; color:#aaa;" onclick="inv=inv.filter(x=>x.id!==${i.id});updateUI();">TRASH</button>
-            `;
+            d.className = `item-card ${i.rarity === 'legend' ? 'rarity-legend' : ''}`;
+            d.innerHTML = `<span class="enchant-txt">${i.enchant.n}</span><b>${i.part}</b> <span class="set-txt">[${i.set}]</span><br>
+                <button class="btn-equip" onclick="equip(${i.id})">装備</button>
+                <button class="btn-trash" onclick="trash(${i.id})">分解</button>`;
             list.appendChild(d);
         });
+    }
+
+    function trash(id) {
+        inv = inv.filter(x => x.id !== id);
+        p.fragments += 5;
+        log("分解して [魔力の欠片] を5個手に入れた！");
+        updateUI();
     }
 
     function equip(id) {
@@ -228,15 +244,8 @@
         updateUI();
     }
 
-    function gacha() {
-        p.job = Object.keys(JOBS)[Math.floor(Math.random()*3)];
-        log(`JOB: ${p.job}`); updateUI();
-    }
-
-    function log(m) {
-        const d = document.getElementById("game-log");
-        d.innerHTML = `> ${m}<br>` + d.innerHTML;
-    }
+    function gacha() { p.job = Object.keys(JOBS)[Math.floor(Math.random()*3)]; updateUI(); }
+    function log(m) { const d = document.getElementById("game-log"); d.innerHTML = `> ${m}<br>` + d.innerHTML; }
 </script>
 </body>
 </html>
