@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>簡易ハクスラRPG</title>
+    <style>
+        body { background: #222; color: #eee; font-family: sans-serif; text-align: center; }
+        #game-log { height: 200px; overflow-y: scroll; border: 1px solid #444; margin: 20px; padding: 10px; background: #000; text-align: left; }
+        .status { font-size: 1.2em; color: #0f0; }
+        button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #444; color: #fff; border: none; border-radius: 5px; }
+        button:hover { background: #666; }
+        .rare { color: gold; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Simple Hack & Slash</h1>
+    
+    <div id="char-info">
+        <p>職業: <span id="job-name">-</span></p>
+        <p class="status">Lv: <span id="lv">1</span> | ATK: <span id="atk">0</span> | HP: <span id="hp">0</span></p>
+        <p>経験値: <span id="exp">0</span> / <span id="next-exp">100</span></p>
+    </div>
+
+    <div id="equipment">
+        <p>装備: <span id="weapon-name">素手</span> (ATK +<span id="weapon-atk">0</span>)</p>
+    </div>
+
+    <button onclick="battle()">敵を倒す (冒険に出る)</button>
+    <button onclick="gacha()">職業ガチャ (リセット)</button>
+
+    <div id="game-log">ゲーム開始！まずは「職業ガチャ」を回してキャラを作ろう。</div>
+
+    <script>
+        // --- データ定義 ---
+        const JOBS = {
+            "戦士": { hp: 100, atk: 15, growth: { hp: 10, atk: 5 } },
+            "魔法使い": { hp: 50, atk: 25, growth: { hp: 4, atk: 10 } },
+            "盗賊": { hp: 70, atk: 20, growth: { hp: 6, atk: 7 } }
+        };
+
+        const WEAPON_PREFIX = ["なまくらな", "普通の", "鋭い", "伝説の", "神殺しの"];
+
+        // --- プレイヤー変数 ---
+        let player = { job: "", lv: 1, hp: 0, atk: 0, exp: 0, nextExp: 100, weaponAtk: 0 };
+
+        // --- 職業ガチャ ---
+        function gacha() {
+            const jobKeys = Object.keys(JOBS);
+            const selected = jobKeys[Math.floor(Math.random() * jobKeys.length)];
+            player.job = selected;
+            player.lv = 1;
+            player.hp = JOBS[selected].hp;
+            player.atk = JOBS[selected].atk;
+            player.exp = 0;
+            player.nextExp = 100;
+            player.weaponAtk = 0;
+            
+            updateUI();
+            log(`運命のダイス... あなたは [${selected}] になった！`);
+        }
+
+        // --- バトル & ドロップ ---
+        function battle() {
+            if (!player.job) return log("先にガチャを回してくれ！");
+
+            // 経験値獲得
+            let gainExp = 30 + Math.floor(Math.random() * 20);
+            player.exp += gainExp;
+            log(`敵を倒した！ ${gainExp} の経験値を得た。`);
+
+            // 武器ドロップ判定 (30%の確率)
+            if (Math.random() < 0.3) {
+                dropWeapon();
+            }
+
+            // レベルアップ判定
+            if (player.exp >= player.nextExp) {
+                levelUp();
+            }
+            updateUI();
+        }
+
+        function levelUp() {
+            player.lv++;
+            player.exp -= player.nextExp;
+            player.nextExp = Math.floor(player.nextExp * 1.5);
+
+            // 職業ごとのランダム成長
+            const growth = JOBS[player.job].growth;
+            let hpGain = Math.floor(Math.random() * growth.hp) + 1;
+            let atkGain = Math.floor(Math.random() * growth.atk) + 1;
+
+            player.hp += hpGain;
+            player.atk += atkGain;
+
+            log(`<span class="rare">レベルアップ！ HP+${hpGain}, ATK+${atkGain}</span>`);
+        }
+
+        function dropWeapon() {
+            const prefixIndex = Math.floor(Math.random() * WEAPON_PREFIX.length);
+            const power = (prefixIndex + 1) * 5 + Math.floor(Math.random() * 5);
+            
+            if (power > player.weaponAtk) {
+                player.weaponAtk = power;
+                document.getElementById("weapon-name").innerText = `${WEAPON_PREFIX[prefixIndex]}剣`;
+                document.getElementById("weapon-atk").innerText = power;
+                log(`<span class="rare">お宝発見！ ${WEAPON_PREFIX[prefixIndex]}剣 (ATK+${power}) を装備した！</span>`);
+            } else {
+                log("ゴミ同然の武器を拾ったが、今のほうが強いので捨てた。");
+            }
+        }
+
+        // --- ユーティリティ ---
+        function log(msg) {
+            const div = document.getElementById("game-log");
+            div.innerHTML = msg + "<br>" + div.innerHTML;
+        }
+
+        function updateUI() {
+            document.getElementById("job-name").innerText = player.job;
+            document.getElementById("lv").innerText = player.lv;
+            document.getElementById("hp").innerText = player.hp;
+            document.getElementById("atk").innerText = player.atk;
+            document.getElementById("exp").innerText = player.exp;
+            document.getElementById("next-exp").innerText = player.nextExp;
+        }
+    </script>
+</body>
+</html>
