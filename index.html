@@ -2,129 +2,191 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>簡易ハクスラRPG</title>
+    <title>Emoji Hack & Slash</title>
     <style>
-        body { background: #222; color: #eee; font-family: sans-serif; text-align: center; }
-        #game-log { height: 200px; overflow-y: scroll; border: 1px solid #444; margin: 20px; padding: 10px; background: #000; text-align: left; }
-        .status { font-size: 1.2em; color: #0f0; }
-        button { padding: 10px 20px; font-size: 1em; cursor: pointer; background: #444; color: #fff; border: none; border-radius: 5px; }
-        button:hover { background: #666; }
-        .rare { color: gold; font-weight: bold; }
+        :root { --area-color: #222; }
+        body { background: var(--area-color); color: #eee; font-family: 'Courier New', Courier, monospace; text-align: center; transition: background 0.5s; }
+        #game-container { max-width: 600px; margin: auto; padding: 20px; }
+        #game-log { height: 250px; overflow-y: scroll; border: 2px solid #444; margin: 20px 0; padding: 10px; background: rgba(0,0,0,0.8); text-align: left; font-size: 0.9em; }
+        .status-card { background: #333; padding: 15px; border-radius: 10px; border-left: 5px solid #0f0; margin-bottom: 10px; }
+        .rare { color: gold; font-weight: bold; text-shadow: 0 0 5px orange; }
+        .skill { color: #00ffff; font-weight: bold; font-style: italic; }
+        .boss-warn { color: #ff4444; font-size: 1.5em; font-weight: bold; animation: blink 0.5s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        button { padding: 15px 30px; font-size: 1.1em; cursor: pointer; background: #555; color: #fff; border: none; border-radius: 5px; margin: 5px; }
+        button:hover { background: #777; }
+        .stage-info { font-size: 1.5em; font-weight: bold; color: #fff; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <h1>Simple Hack & Slash</h1>
+<div id="game-container">
+    <div class="stage-info">🚩 <span id="area-name">はじまりの森</span> (Stage <span id="stage-num">1</span>)</div>
     
-    <div id="char-info">
-        <p>職業: <span id="job-name">-</span></p>
-        <p class="status">Lv: <span id="lv">1</span> | ATK: <span id="atk">0</span> | HP: <span id="hp">0</span></p>
-        <p>経験値: <span id="exp">0</span> / <span id="next-exp">100</span></p>
+    <div class="status-card">
+        <div id="char-info">
+            <span id="job-icon">❓</span> <b><span id="job-name">未登録</span></b> 
+            Lv.<span id="lv">1</span> [ EXP: <span id="exp">0</span> / <span id="next-exp">100</span> ]
+        </div>
+        <div style="font-size: 1.4em; margin-top:10px;">
+            ❤️ HP: <span id="hp">0</span> | ⚔️ ATK: <span id="atk-total">0</span>
+        </div>
     </div>
 
     <div id="equipment">
-        <p>装備: <span id="weapon-name">素手</span> (ATK +<span id="weapon-atk">0</span>)</p>
+        📦 装備: <span id="weapon-name">素手</span> <small>(+<span id="weapon-atk">0</span>)</small>
     </div>
 
-    <button onclick="battle()">敵を倒す (冒険に出る)</button>
-    <button onclick="gacha()">職業ガチャ (リセット)</button>
+    <hr>
+    <div id="enemy-display" style="font-size: 3em; height: 1.2em;">🌲</div>
+    <div id="enemy-name" style="height: 1.2em;">探索準備中...</div>
+    <hr>
 
-    <div id="game-log">ゲーム開始！まずは「職業ガチャ」を回してキャラを作ろう。</div>
+    <button id="battle-btn" onclick="battle()">⚔️ 敵を探索</button>
+    <button onclick="gacha()">🎲 職業ガチャ</button>
 
-    <script>
-        // --- データ定義 ---
-        const JOBS = {
-            "戦士": { hp: 100, atk: 15, growth: { hp: 10, atk: 5 } },
-            "魔法使い": { hp: 50, atk: 25, growth: { hp: 4, atk: 10 } },
-            "盗賊": { hp: 70, atk: 20, growth: { hp: 6, atk: 7 } }
-        };
+    <div id="game-log"></div>
+</div>
 
-        const WEAPON_PREFIX = ["なまくらな", "普通の", "鋭い", "伝説の", "神殺しの"];
+<script>
+    // --- データ定義 ---
+    const JOBS = {
+        "戦士": { icon: "⚔️", hp: 120, atk: 15, growth: { hp: 12, atk: 4 }, skillName: "ギガスラッシュ", color: "#442222" },
+        "魔導師": { icon: "🔮", hp: 60, atk: 25, growth: { hp: 4, atk: 9 }, skillName: "エクスプロージョン", color: "#222244" },
+        "暗殺者": { icon: "👤", hp: 80, atk: 20, growth: { hp: 7, atk: 7 }, skillName: "滅多刺し", color: "#223322" }
+    };
 
-        // --- プレイヤー変数 ---
-        let player = { job: "", lv: 1, hp: 0, atk: 0, exp: 0, nextExp: 100, weaponAtk: 0 };
+    const AREAS = [
+        { name: "はじまりの森", bg: "#1a2e1a", enemies: [{n:"スライム", e:"💧"}, {n:"ゴブリン", e:"👺"}], boss: {n:"キングスライム", e:"👑💧"} },
+        { name: "灼熱の洞窟", bg: "#3e1a1a", enemies: [{n:"火の玉", e:"🔥"}, {n:"溶岩男", e:"🗿"}], boss: {n:"レッドドラゴン", e:"🐉"} },
+        { name: "天空の城", bg: "#1a3e3e", enemies: [{n:"グリフォン", e:"🦅"}, {n:"動く鎧", e:"🤖"}], boss: {n:"大天使", e:"👼"} }
+    ];
 
-        // --- 職業ガチャ ---
-        function gacha() {
-            const jobKeys = Object.keys(JOBS);
-            const selected = jobKeys[Math.floor(Math.random() * jobKeys.length)];
-            player.job = selected;
-            player.lv = 1;
-            player.hp = JOBS[selected].hp;
-            player.atk = JOBS[selected].atk;
-            player.exp = 0;
-            player.nextExp = 100;
-            player.weaponAtk = 0;
-            
-            updateUI();
-            log(`運命のダイス... あなたは [${selected}] になった！`);
+    const WEAPON_PREFIX = ["なまくらな", "鉄の", "鋭い", "聖なる", "魔王の"];
+
+    // --- ゲーム状態 ---
+    let player = { job: "", lv: 1, hp: 0, atk: 0, exp: 0, nextExp: 100, weaponAtk: 0 };
+    let state = { stage: 1, kills: 0, isBoss: false };
+
+    // --- 職業ガチャ ---
+    function gacha() {
+        const jobKeys = Object.keys(JOBS);
+        const selected = jobKeys[Math.floor(Math.random() * jobKeys.length)];
+        player.job = selected;
+        player.lv = 1;
+        player.hp = JOBS[selected].hp;
+        player.atk = JOBS[selected].atk;
+        player.exp = 0;
+        player.nextExp = 100;
+        player.weaponAtk = 0;
+        
+        document.body.style.setProperty('--area-color', JOBS[selected].color);
+        log(`✨ 運命が決定！ [${selected}] として転生した。`);
+        updateUI();
+    }
+
+    // --- メインバトル ---
+    function battle() {
+        if (!player.job) return log("🎲 まずはガチャを回して職業を決めてくれ！");
+        
+        const areaIndex = (state.stage - 1) % AREAS.length;
+        const currentArea = AREAS[areaIndex];
+        let enemy;
+
+        if (state.isBoss) {
+            enemy = currentArea.boss;
+            log(`<span class="boss-warn">⚠️ BOSS: ${enemy.n} が現れた！！</span>`);
+        } else {
+            enemy = currentArea.enemies[Math.floor(Math.random() * currentArea.enemies.length)];
+            log(`------------------`);
+            log(`${enemy.e} ${enemy.n} が行く手を阻む！`);
         }
 
-        // --- バトル & ドロップ ---
-        function battle() {
-            if (!player.job) return log("先にガチャを回してくれ！");
+        document.getElementById("enemy-display").innerText = enemy.e;
+        document.getElementById("enemy-name").innerText = (state.isBoss ? "【BOSS】" : "") + enemy.n;
 
-            // 経験値獲得
-            let gainExp = 30 + Math.floor(Math.random() * 20);
-            player.exp += gainExp;
-            log(`敵を倒した！ ${gainExp} の経験値を得た。`);
+        // スキル判定
+        let damageMult = 1;
+        if (Math.random() < 0.25) {
+            damageMult = 2 + (Math.random() * 2);
+            log(`<span class="skill">⚡ 奥義！${JOBS[player.job].skillName}！！</span>`);
+        }
 
-            // 武器ドロップ判定 (30%の確率)
-            if (Math.random() < 0.3) {
-                dropWeapon();
+        // 報酬
+        let gainExp = Math.floor((20 + Math.random() * 20) * (1 + state.stage * 0.5) * damageMult);
+        player.exp += gainExp;
+        log(`💥 撃破！ ${gainExp} の経験値を得た。`);
+
+        // ステージ進行管理
+        if (state.isBoss) {
+            state.isBoss = false;
+            state.stage++;
+            log(`<span class="rare">🎊 ステージクリア！ Stage ${state.stage} へ！</span>`);
+            dropWeapon(true); // ボス撃破時は必ずドロップ
+        } else {
+            state.kills++;
+            if (state.kills % 10 === 0) {
+                state.isBoss = true;
+                log(`<span class="boss-warn">強烈な気配を感じる... 次はボスだ！</span>`);
+            } else if (Math.random() < 0.2) {
+                dropWeapon(false);
             }
-
-            // レベルアップ判定
-            if (player.exp >= player.nextExp) {
-                levelUp();
-            }
-            updateUI();
         }
 
-        function levelUp() {
-            player.lv++;
-            player.exp -= player.nextExp;
-            player.nextExp = Math.floor(player.nextExp * 1.5);
+        if (player.exp >= player.nextExp) levelUp();
+        updateUI();
+    }
 
-            // 職業ごとのランダム成長
-            const growth = JOBS[player.job].growth;
-            let hpGain = Math.floor(Math.random() * growth.hp) + 1;
-            let atkGain = Math.floor(Math.random() * growth.atk) + 1;
+    function levelUp() {
+        player.lv++;
+        player.exp -= player.nextExp;
+        player.nextExp = Math.floor(player.nextExp * 1.6);
+        
+        const growth = JOBS[player.job].growth;
+        let hpG = Math.floor(Math.random() * growth.hp) + 2;
+        let atkG = Math.floor(Math.random() * growth.atk) + 2;
+        player.hp += hpG;
+        player.atk += atkG;
+        log(`<span class="rare">🆙 レベルアップ！ Lv.${player.lv} (HP+${hpG}, ATK+${atkG})</span>`);
+    }
 
-            player.hp += hpGain;
-            player.atk += atkGain;
-
-            log(`<span class="rare">レベルアップ！ HP+${hpGain}, ATK+${atkGain}</span>`);
+    function dropWeapon(isBoss) {
+        const prefixIndex = isBoss ? 
+            Math.min(WEAPON_PREFIX.length - 1, Math.floor(Math.random() * 3) + 2) : 
+            Math.floor(Math.random() * WEAPON_PREFIX.length);
+        
+        const power = (prefixIndex + 1) * 5 + (state.stage * 3) + Math.floor(Math.random() * 5);
+        
+        if (power > player.weaponAtk) {
+            player.weaponAtk = power;
+            document.getElementById("weapon-name").innerText = `${WEAPON_PREFIX[prefixIndex]}剣`;
+            document.getElementById("weapon-atk").innerText = power;
+            log(`<span class="rare">💎 装備更新！ ${WEAPON_PREFIX[prefixIndex]}剣 (ATK+${power})</span>`);
+        } else {
+            log("🍂 装備を拾ったが、今使っているものより弱かった。");
         }
+    }
 
-        function dropWeapon() {
-            const prefixIndex = Math.floor(Math.random() * WEAPON_PREFIX.length);
-            const power = (prefixIndex + 1) * 5 + Math.floor(Math.random() * 5);
-            
-            if (power > player.weaponAtk) {
-                player.weaponAtk = power;
-                document.getElementById("weapon-name").innerText = `${WEAPON_PREFIX[prefixIndex]}剣`;
-                document.getElementById("weapon-atk").innerText = power;
-                log(`<span class="rare">お宝発見！ ${WEAPON_PREFIX[prefixIndex]}剣 (ATK+${power}) を装備した！</span>`);
-            } else {
-                log("ゴミ同然の武器を拾ったが、今のほうが強いので捨てた。");
-            }
-        }
+    function log(msg) {
+        const div = document.getElementById("game-log");
+        div.innerHTML = msg + "<br>" + div.innerHTML;
+    }
 
-        // --- ユーティリティ ---
-        function log(msg) {
-            const div = document.getElementById("game-log");
-            div.innerHTML = msg + "<br>" + div.innerHTML;
-        }
-
-        function updateUI() {
-            document.getElementById("job-name").innerText = player.job;
-            document.getElementById("lv").innerText = player.lv;
-            document.getElementById("hp").innerText = player.hp;
-            document.getElementById("atk").innerText = player.atk;
-            document.getElementById("exp").innerText = player.exp;
-            document.getElementById("next-exp").innerText = player.nextExp;
-        }
-    </script>
+    function updateUI() {
+        const jobData = JOBS[player.job] || {icon: "❓", name: "未設定"};
+        document.getElementById("job-icon").innerText = jobData.icon;
+        document.getElementById("job-name").innerText = player.job;
+        document.getElementById("lv").innerText = player.lv;
+        document.getElementById("hp").innerText = player.hp;
+        document.getElementById("atk-total").innerText = player.atk + player.weaponAtk;
+        document.getElementById("exp").innerText = player.exp;
+        document.getElementById("next-exp").innerText = player.nextExp;
+        document.getElementById("stage-num").innerText = state.stage;
+        
+        const areaIndex = (state.stage - 1) % AREAS.length;
+        document.getElementById("area-name").innerText = AREAS[areaIndex].name;
+        document.body.style.backgroundColor = AREAS[areaIndex].bg;
+    }
+</script>
 </body>
 </html>
