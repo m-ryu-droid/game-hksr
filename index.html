@@ -2,47 +2,54 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>RPG Inventory Master</title>
+    <title>Dungeon Crawler v3 - Refined</title>
     <style>
         :root { --main-bg: #121212; --panel-bg: #1e1e1e; }
-        body { background: var(--main-bg); color: #e0e0e0; font-family: 'Hiragino Kaku Gothic Pro', sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        #game-layout { display: grid; grid-template-columns: 350px 400px; gap: 20px; padding: 20px; max-width: 800px; }
+        body { background: var(--main-bg); color: #e0e0e0; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        #game-layout { display: grid; grid-template-columns: 350px 420px; gap: 20px; padding: 20px; max-width: 850px; }
         
         .panel { background: var(--panel-bg); border-radius: 12px; padding: 15px; border: 1px solid #333; }
-        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9em; margin-bottom: 10px; }
+        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 10px; }
         
         /* 敵表示エリア */
-        #battle-area { text-align: center; background: linear-gradient(to bottom, #1a1a2e, #16213e); border-radius: 8px; padding: 20px; margin-bottom: 10px; }
-        .hp-bar-bg { background: #444; width: 100%; height: 10px; border-radius: 5px; margin-top: 5px; overflow: hidden; }
-        #enemy-hp-fill { background: #ff5252; width: 100%; height: 100%; transition: width 0.3s; }
+        #battle-area { text-align: center; background: #000; border-radius: 8px; padding: 20px; margin-bottom: 10px; border: 2px solid #444; }
+        .hp-bar-bg { background: #444; width: 100%; height: 12px; border-radius: 6px; margin-top: 10px; overflow: hidden; }
+        #enemy-hp-fill { background: #ff5252; width: 100%; height: 100%; transition: width 0.2s; }
         
-        /* 装備スロット表示 */
-        .equip-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 0.8em; }
-        .slot { background: #252525; padding: 8px; border-radius: 5px; border: 1px dashed #555; }
-        .slot b { color: #888; font-size: 0.7em; display: block; }
+        /* 装備スロット */
+        .equip-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.75em; }
+        .slot { background: #252525; padding: 6px; border-radius: 4px; border: 1px solid #444; }
+        .slot b { color: #aaa; font-size: 0.8em; }
 
         /* カバン */
-        #inventory-list { height: 350px; overflow-y: auto; background: #151515; border-radius: 5px; padding: 5px; }
-        .item-card { background: #2c2c2c; margin-bottom: 5px; padding: 8px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; font-size: 0.8em; }
+        #inventory-list { height: 380px; overflow-y: auto; background: #151515; padding: 5px; }
+        .item-card { background: #2c2c2c; margin-bottom: 6px; padding: 10px; border-radius: 6px; border-left: 4px solid #888; font-size: 0.85em; display: flex; flex-direction: column; gap: 5px; }
+        .item-actions { display: flex; justify-content: flex-end; gap: 5px; }
         
-        button { cursor: pointer; background: #3d5afe; color: white; border: none; border-radius: 4px; padding: 6px 12px; transition: 0.2s; }
-        button:hover { background: #536dfe; }
-        button.stop { background: #f44336; }
-        
-        #game-log { height: 150px; overflow-y: scroll; background: #000; color: #aaa; font-size: 0.75em; padding: 10px; margin-top: 10px; }
-        .rare { color: #ffd700; font-weight: bold; }
+        /* レアリティ色 */
+        .rarity-common { border-left-color: #888; }
+        .rarity-rare { border-left-color: #3d5afe; color: #82b1ff; }
+        .rarity-epic { border-left-color: #ffd700; color: #ffd700; font-weight: bold; }
+
+        button { cursor: pointer; background: #444; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 0.9em; }
+        button:hover { background: #666; }
+        button.equip { background: #2e7d32; }
+        button.discard { background: #c62828; }
+        button.active { background: #f44336; width: 100%; padding: 12px; font-size: 1.1em; }
+
+        #game-log { height: 120px; overflow-y: scroll; background: #000; color: #888; font-size: 0.75em; padding: 10px; margin-top: 10px; border-top: 1px solid #444; }
     </style>
 </head>
 <body>
 
-<h1>⚔️ Dungeon Crawler v2</h1>
+<h1>⚔️ Dungeon Crawler v3</h1>
 
 <div id="game-layout">
     <div>
         <div id="battle-area" class="panel">
-            <div id="area-name" style="font-size: 0.8em; color: #888;">Stage 1: 始まりの草原</div>
-            <div id="enemy-emoji" style="font-size: 4em; margin: 10px 0;">🌳</div>
-            <div id="enemy-name" style="font-weight: bold;">敵を探索中...</div>
+            <div id="area-name" style="font-size: 0.8em; color: #888;">Stage 1: 草原</div>
+            <div id="enemy-emoji" style="font-size: 4em; margin: 10px 0;">🌲</div>
+            <div id="enemy-name" style="font-weight: bold;">探索準備完了</div>
             <div class="hp-bar-bg"><div id="enemy-hp-fill"></div></div>
         </div>
 
@@ -50,62 +57,54 @@
             <div class="status-grid">
                 <div><b>Lv:</b> <span id="lv">1</span></div>
                 <div><b>Job:</b> <span id="job">未設定</span></div>
-                <div><b>HP:</b> <span id="hp">0</span></div>
+                <div><b>HP:</b> <span id="hp">0</span> / <span id="max-hp">0</span></div>
                 <div><b>ATK:</b> <span id="atk">0</span></div>
             </div>
             
             <div class="equip-slots">
-                <div class="slot"><b>HEAD</b><span id="eq-head">なし</span></div>
-                <div class="slot"><b>BODY</b><span id="eq-body">なし</span></div>
-                <div class="slot"><b>LEGS</b><span id="eq-legs">なし</span></div>
-                <div class="slot"><b>WEAPON 1</b><span id="eq-w1">素手</span></div>
-                <div class="slot"><b>WEAPON 2</b><span id="eq-w2">🔒 解放Lv.10</span></div>
+                <div class="slot"><b>頭</b><br><span id="eq-head">なし</span></div>
+                <div class="slot"><b>体</b><br><span id="eq-body">なし</span></div>
+                <div class="slot"><b>脚</b><br><span id="eq-legs">なし</span></div>
+                <div class="slot"><b>武器1</b><br><span id="eq-w1">素手</span></div>
+                <div class="slot"><b>武器2</b><br><span id="eq-w2">🔒 Lv10</span></div>
             </div>
             
             <div style="margin-top: 15px;">
-                <button id="run-btn" onclick="toggleAuto()">探索開始</button>
-                <button onclick="gacha()">ガチャ</button>
+                <button id="run-btn" class="active" onclick="toggleAuto()" style="background:#3d5afe">🌲 探索開始</button>
+                <button onclick="gacha()" style="margin-top:10px; width:100%">🎲 職業ガチャ</button>
             </div>
         </div>
-        <div id="game-log" class="panel"></div>
+        <div id="game-log"></div>
     </div>
 
     <div class="panel">
-        <div style="font-weight: bold; margin-bottom: 10px;">📦 カバン (アイテムをタップで装備)</div>
+        <div style="font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;">
+            <span>📦 カバン</span>
+            <span id="bag-count" style="font-size: 0.8em; color:#aaa;">0/12</span>
+        </div>
         <div id="inventory-list"></div>
     </div>
 </div>
 
 <script>
-    // --- 職業データ ---
-    const JOBS = {
-        "戦士": { hp: 150, atk: 15 },
-        "魔術師": { hp: 80, atk: 30 },
-        "冒険者": { hp: 100, atk: 20 }
-    };
-
-    // --- 敵データ ---
+    const JOBS = { "戦士": { hp: 150, atk: 15 }, "魔術師": { hp: 80, atk: 30 }, "冒険者": { hp: 100, atk: 20 } };
     const ENEMIES = [
-        { name: "スライム", e: "💧", hp: 50, atk: 5, exp: 40 },
-        { name: "ワイルドボア", e: "🐗", hp: 120, atk: 15, exp: 100 },
-        { name: "スケルトンナイト", e: "💀", hp: 300, atk: 40, exp: 300 }
+        { name: "スライム", e: "💧", hp: 40, atk: 4, exp: 30 },
+        { name: "ゴブリン", e: "👺", hp: 100, atk: 12, exp: 80 },
+        { name: "オーク", e: "🐗", hp: 250, atk: 25, exp: 200 }
     ];
 
-    let player = {
-        lv: 1, exp: 0, job: "", hp: 0, atk: 0,
-        equips: { head: null, body: null, legs: null, w1: null, w2: null }
-    };
+    let player = { lv: 1, exp: 0, job: "", hp: 0, maxHp: 0, atk: 0, equips: { head:null, body:null, legs:null, w1:null, w2:null } };
     let inventory = [];
-    let isAuto = false;
-    let timer = null;
-    let enemy = null;
+    let isAuto = false, timer = null, enemy = null;
 
     function gacha() {
         const keys = Object.keys(JOBS);
         player.job = keys[Math.floor(Math.random() * keys.length)];
-        player.hp = JOBS[player.job].hp;
+        player.maxHp = JOBS[player.job].hp;
+        player.hp = player.maxHp;
         player.atk = JOBS[player.job].atk;
-        log(`✨ ${player.job} として転生した！`);
+        log(`✨ ${player.job} になった！`);
         updateUI();
     }
 
@@ -114,12 +113,12 @@
         isAuto = !isAuto;
         const btn = document.getElementById("run-btn");
         if (isAuto) {
-            btn.innerText = "探索中止";
-            btn.classList.add("stop");
+            btn.innerText = "🛑 探索を中止する";
+            btn.style.background = "#f44336";
             timer = setInterval(tick, 1000);
         } else {
-            btn.innerText = "探索開始";
-            btn.classList.remove("stop");
+            btn.innerText = "🌲 探索を再開する";
+            btn.style.background = "#3d5afe";
             clearInterval(timer);
         }
     }
@@ -127,92 +126,92 @@
     function tick() {
         if (!enemy) spawnEnemy();
         
-        // プレイヤーの攻撃
-        let pAtk = player.atk + 
-                  (player.equips.w1 ? player.equips.w1.val : 0) + 
-                  (player.equips.w2 ? player.equips.w2.val : 0);
+        // 攻撃計算
+        let pAtk = player.atk + (player.equips.w1?.val || 0) + (player.equips.w2?.val || 0);
         enemy.curHp -= pAtk;
-        log(`⚔️ 敵に ${pAtk} ダメージ！`);
-
+        
         if (enemy.curHp <= 0) {
-            log(`🎊 ${enemy.name} を撃破！`);
+            log(`🎊 ${enemy.name}を倒した！`);
             player.exp += enemy.exp;
             if (Math.random() < 0.4) dropItem();
             enemy = null;
             if (player.exp >= player.lv * 100) levelUp();
         } else {
-            // 敵の攻撃
-            let eAtk = Math.max(1, enemy.atk - ( (player.equips.body?.val || 0) + (player.equips.head?.val || 0) ));
+            let eAtk = Math.max(1, enemy.atk - ((player.equips.body?.val || 0) + (player.equips.head?.val || 0)));
             player.hp -= eAtk;
             if (player.hp <= 0) {
-                log("💀 敗北した... 探索を中止します。");
-                toggleAuto();
-                player.hp = 10; // 救済
+                log("💀 敗北... 拠点へ撤退しました。");
+                enemy = null; // 敵をリセット
+                player.hp = player.maxHp; // 回復
+                toggleAuto(); // 停止
             }
         }
         updateUI();
     }
 
     function spawnEnemy() {
-        let base = ENEMIES[Math.min(ENEMIES.length - 1, Math.floor(player.lv / 5))];
+        let base = ENEMIES[Math.min(ENEMIES.length - 1, Math.floor((player.lv-1) / 3))];
         enemy = { ...base, curHp: base.hp };
-        updateUI();
     }
 
     function dropItem() {
-        const parts = ["head", "body", "legs", "w1"];
-        const part = parts[Math.floor(Math.random() * parts.length)];
-        const val = Math.floor(Math.random() * (player.lv * 5)) + 5;
-        const item = { id: Date.now(), part, val, name: `${part.toUpperCase()}+${val}` };
+        if (inventory.length >= 12) return log("カバンが満杯だ！");
+        const types = { head:"兜", body:"鎧", legs:"具足", w1:"剣" };
+        const part = Object.keys(types)[Math.floor(Math.random() * 4)];
+        const r = Math.random();
+        let rarity = "common", mult = 1, rName = "";
+        if (r < 0.1) { rarity = "epic"; mult = 3; rName = "伝説の"; }
+        else if (r < 0.3) { rarity = "rare"; mult = 1.5; rName = "良質な"; }
+
+        const val = Math.floor((Math.random() * 5 + player.lv) * mult);
+        const item = { id: Date.now(), part, val, rarity, name: `${rName}${types[part]}+${val}` };
         inventory.push(item);
-        log(`<span class="rare">🎁 アイテム入手: ${item.name}</span>`);
+        log(`<span style="color:gold">🎁 ${item.name} を拾った！</span>`);
         updateInvUI();
     }
 
     function equip(id) {
         const idx = inventory.findIndex(i => i.id === id);
         const item = inventory[idx];
-        
-        if (item.part === 'w2' && player.lv < 10) return alert("スロット2はLv10から！");
-
         const old = player.equips[item.part];
         player.equips[item.part] = item;
         inventory.splice(idx, 1);
         if (old) inventory.push(old);
-        
         updateInvUI();
         updateUI();
     }
 
+    function discard(id) {
+        inventory = inventory.filter(i => i.id !== id);
+        updateInvUI();
+    }
+
     function levelUp() {
         player.lv++;
-        player.atk += 5;
-        player.hp += 20;
-        log(`<span class="rare">🆙 レベルアップ！ Lv.${player.lv}</span>`);
-        if (player.lv === 10) log("🔓 武器スロット2が解放された！");
+        player.maxHp += 20; player.hp = player.maxHp; player.atk += 5;
+        log(`<span style="color:cyan">🆙 LvUP! Lv.${player.lv}</span>`);
     }
 
     function updateUI() {
         document.getElementById("lv").innerText = player.lv;
         document.getElementById("job").innerText = player.job || "---";
-        document.getElementById("hp").innerText = Math.floor(player.hp);
-        document.getElementById("atk").innerText = player.atk;
+        document.getElementById("hp").innerText = Math.max(0, Math.floor(player.hp));
+        document.getElementById("max-hp").innerText = player.maxHp;
+        document.getElementById("atk").innerText = player.atk + (player.equips.w1?.val || 0);
         
         if (enemy) {
             document.getElementById("enemy-name").innerText = enemy.name;
             document.getElementById("enemy-emoji").innerText = enemy.e;
-            let pct = (enemy.curHp / enemy.hp) * 100;
-            document.getElementById("enemy-hp-fill").style.width = pct + "%";
+            document.getElementById("enemy-hp-fill").style.width = (enemy.curHp / enemy.hp * 100) + "%";
+        } else {
+            document.getElementById("enemy-name").innerText = "探索中...";
+            document.getElementById("enemy-hp-fill").style.width = "0%";
         }
 
-        document.getElementById("eq-head").innerText = player.equips.head?.name || "なし";
-        document.getElementById("eq-body").innerText = player.equips.body?.name || "なし";
-        document.getElementById("eq-legs").innerText = player.equips.legs?.name || "なし";
-        document.getElementById("eq-w1").innerText = player.equips.w1?.name || "素手";
-        
-        if (player.lv >= 10) {
-            document.getElementById("eq-w2").innerText = player.equips.w2?.name || "素手";
-        }
+        ["head", "body", "legs", "w1"].forEach(p => {
+            document.getElementById(`eq-${p}`).innerText = player.equips[p]?.name || "なし";
+        });
+        document.getElementById("bag-count").innerText = `${inventory.length}/12`;
     }
 
     function updateInvUI() {
@@ -220,8 +219,13 @@
         list.innerHTML = "";
         inventory.forEach(i => {
             const d = document.createElement("div");
-            d.className = "item-card";
-            d.innerHTML = `<span>${i.name}</span> <button onclick="equip(${i.id})">装備</button>`;
+            d.className = `item-card rarity-${i.rarity}`;
+            d.innerHTML = `
+                <div><b>${i.name}</b> (効果: ${i.val})</div>
+                <div class="item-actions">
+                    <button class="equip" onclick="equip(${i.id})">装備</button>
+                    <button class="discard" onclick="discard(${i.id})">捨てる</button>
+                </div>`;
             list.appendChild(d);
         });
     }
