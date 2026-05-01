@@ -2,232 +2,236 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>Dungeon Crawler v3 - Refined</title>
+    <title>Dungeon Crawler v5 - Detailed Stats</title>
     <style>
-        :root { --main-bg: #121212; --panel-bg: #1e1e1e; }
-        body { background: var(--main-bg); color: #e0e0e0; font-family: sans-serif; margin: 0; display: flex; flex-direction: column; align-items: center; }
-        #game-layout { display: grid; grid-template-columns: 350px 420px; gap: 20px; padding: 20px; max-width: 850px; }
+        :root { --main-bg: #0f0f0f; --panel-bg: #1a1a1a; --accent: #00e5ff; --rare: #ffea00; }
+        body { background: var(--main-bg); color: #e0e0e0; font-family: 'Consolas', 'Courier New', monospace; margin: 0; display: flex; flex-direction: column; align-items: center; }
+        #game-layout { display: grid; grid-template-columns: 320px 320px 320px; gap: 15px; padding: 20px; max-width: 1000px; }
         
-        .panel { background: var(--panel-bg); border-radius: 12px; padding: 15px; border: 1px solid #333; }
-        .status-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size: 0.9em; margin-bottom: 10px; border-bottom: 1px solid #444; padding-bottom: 10px; }
-        
-        /* 敵表示エリア */
-        #battle-area { text-align: center; background: #000; border-radius: 8px; padding: 20px; margin-bottom: 10px; border: 2px solid #444; }
-        .hp-bar-bg { background: #444; width: 100%; height: 12px; border-radius: 6px; margin-top: 10px; overflow: hidden; }
+        .panel { background: var(--panel-bg); border-radius: 10px; padding: 15px; border: 1px solid #333; }
+        h3 { margin: 0 0 10px 0; font-size: 1em; color: var(--accent); border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        /* ステータスリスト */
+        .stat-row { display: flex; justify-content: space-between; font-size: 0.85em; margin-bottom: 4px; padding: 2px 0; }
+        .stat-val { color: #fff; font-weight: bold; }
+        .stat-up { color: #4caf50; font-size: 0.8em; }
+
+        /* バトルエリア */
+        #battle-area { text-align: center; background: #000; border: 2px solid #444; border-radius: 10px; padding: 15px; margin-bottom: 15px; }
+        .hp-bar { background: #333; width: 100%; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
         #enemy-hp-fill { background: #ff5252; width: 100%; height: 100%; transition: width 0.2s; }
-        
+
         /* 装備スロット */
-        .equip-slots { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 0.75em; }
-        .slot { background: #252525; padding: 6px; border-radius: 4px; border: 1px solid #444; }
-        .slot b { color: #aaa; font-size: 0.8em; }
+        .slot { background: #252525; padding: 8px; border-radius: 5px; border: 1px solid #444; margin-bottom: 5px; font-size: 0.8em; cursor: pointer; }
+        .slot:hover { border-color: var(--accent); }
+        .slot b { color: #888; display: block; font-size: 0.7em; }
 
-        /* カバン */
-        #inventory-list { height: 380px; overflow-y: auto; background: #151515; padding: 5px; }
-        .item-card { background: #2c2c2c; margin-bottom: 6px; padding: 10px; border-radius: 6px; border-left: 4px solid #888; font-size: 0.85em; display: flex; flex-direction: column; gap: 5px; }
-        .item-actions { display: flex; justify-content: flex-end; gap: 5px; }
+        /* インベントリ */
+        #inventory-list { height: 450px; overflow-y: auto; }
+        .item-card { background: #222; padding: 10px; margin-bottom: 8px; border-radius: 5px; border-left: 4px solid #888; font-size: 0.8em; }
         
-        /* レアリティ色 */
-        .rarity-common { border-left-color: #888; }
-        .rarity-rare { border-left-color: #3d5afe; color: #82b1ff; }
-        .rarity-epic { border-left-color: #ffd700; color: #ffd700; font-weight: bold; }
+        button { cursor: pointer; background: var(--accent); color: #000; border: none; border-radius: 4px; padding: 8px; font-weight: bold; width: 100%; }
+        button.discard { background: #444; color: #ccc; width: auto; padding: 4px 8px; }
+        button.stop { background: #ff5252; color: #fff; }
 
-        button { cursor: pointer; background: #444; color: white; border: none; border-radius: 4px; padding: 6px 10px; font-size: 0.9em; }
-        button:hover { background: #666; }
-        button.equip { background: #2e7d32; }
-        button.discard { background: #c62828; }
-        button.active { background: #f44336; width: 100%; padding: 12px; font-size: 1.1em; }
-
-        #game-log { height: 120px; overflow-y: scroll; background: #000; color: #888; font-size: 0.75em; padding: 10px; margin-top: 10px; border-top: 1px solid #444; }
+        .rarity-epic { border-left-color: var(--rare); color: var(--rare); }
+        #game-log { height: 120px; overflow-y: scroll; background: #000; font-size: 0.7em; padding: 10px; color: #aaa; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<h1>⚔️ Dungeon Crawler v3</h1>
+<h1>🛡️ STATS & STRATEGY</h1>
 
 <div id="game-layout">
+    <div class="panel">
+        <h3>📊 プレイヤー能力</h3>
+        <div class="stat-row"><span>レベル / 職業</span><span class="stat-val">Lv.<span id="lv">1</span> <span id="job">未設定</span></span></div>
+        <div class="stat-row"><span>最大HP</span><span class="stat-val" id="st-hp">0</span></div>
+        <div class="stat-row"><span>攻撃力</span><span class="stat-val" id="st-atk">0</span></div>
+        <div class="stat-row"><span>クリティカル率</span><span class="stat-val" id="st-crit-r">5%</span></div>
+        <div class="stat-row"><span>クリダメージ倍率</span><span class="stat-val" id="st-crit-d">150%</span></div>
+        <div class="stat-row"><span>回避率</span><span class="stat-val" id="st-eva">3%</span></div>
+        <div class="stat-row"><span>素早さ (攻撃速度)</span><span class="stat-val" id="st-spd">1.0s</span></div>
+        <div class="stat-row"><span>状態異常抵抗</span><span class="stat-val" id="st-res">0%</span></div>
+        
+        <h3 style="margin-top:20px;">🛡️ 現在の装備</h3>
+        <div class="equip-grid">
+            <div class="slot"><b>頭部</b><span id="eq-head">なし</span></div>
+            <div class="slot"><b>胴体</b><span id="eq-body">なし</span></div>
+            <div class="slot"><b>脚部</b><span id="eq-legs">なし</span></div>
+            <div class="slot"><b>武器</b><span id="eq-w1">素手</span></div>
+        </div>
+    </div>
+
     <div>
-        <div id="battle-area" class="panel">
-            <div id="area-name" style="font-size: 0.8em; color: #888;">Stage 1: 草原</div>
-            <div id="enemy-emoji" style="font-size: 4em; margin: 10px 0;">🌲</div>
-            <div id="enemy-name" style="font-weight: bold;">探索準備完了</div>
-            <div class="hp-bar-bg"><div id="enemy-hp-fill"></div></div>
+        <div id="battle-area">
+            <div id="area-name" style="font-size:0.7em; color:#888;">Stage 1</div>
+            <div id="enemy-emoji" style="font-size: 3em; margin: 5px;">🌲</div>
+            <div id="enemy-name">探索待ち</div>
+            <div class="hp-bar"><div id="enemy-hp-fill"></div></div>
+            <div id="progress-text" style="font-size: 0.7em; margin-top: 5px;">BOSSまで 0/10</div>
         </div>
 
-        <div class="panel">
-            <div class="status-grid">
-                <div><b>Lv:</b> <span id="lv">1</span></div>
-                <div><b>Job:</b> <span id="job">未設定</span></div>
-                <div><b>HP:</b> <span id="hp">0</span> / <span id="max-hp">0</span></div>
-                <div><b>ATK:</b> <span id="atk">0</span></div>
-            </div>
-            
-            <div class="equip-slots">
-                <div class="slot"><b>頭</b><br><span id="eq-head">なし</span></div>
-                <div class="slot"><b>体</b><br><span id="eq-body">なし</span></div>
-                <div class="slot"><b>脚</b><br><span id="eq-legs">なし</span></div>
-                <div class="slot"><b>武器1</b><br><span id="eq-w1">素手</span></div>
-                <div class="slot"><b>武器2</b><br><span id="eq-w2">🔒 Lv10</span></div>
-            </div>
-            
-            <div style="margin-top: 15px;">
-                <button id="run-btn" class="active" onclick="toggleAuto()" style="background:#3d5afe">🌲 探索開始</button>
-                <button onclick="gacha()" style="margin-top:10px; width:100%">🎲 職業ガチャ</button>
-            </div>
-        </div>
+        <button id="run-btn" onclick="toggleAuto()">⚔️ 探索開始</button>
+        <button onclick="gacha()" style="margin-top: 5px; background: #333; color: #eee;">🎲 ガチャ (リセット)</button>
+
         <div id="game-log"></div>
     </div>
 
     <div class="panel">
-        <div style="font-weight: bold; margin-bottom: 10px; display: flex; justify-content: space-between;">
-            <span>📦 カバン</span>
-            <span id="bag-count" style="font-size: 0.8em; color:#aaa;">0/12</span>
-        </div>
+        <h3>📦 カバン (<span id="bag-count">0/12</span>)</h3>
         <div id="inventory-list"></div>
     </div>
 </div>
 
 <script>
-    const JOBS = { "戦士": { hp: 150, atk: 15 }, "魔術師": { hp: 80, atk: 30 }, "冒険者": { hp: 100, atk: 20 } };
-    const ENEMIES = [
-        { name: "スライム", e: "💧", hp: 40, atk: 4, exp: 30 },
-        { name: "ゴブリン", e: "👺", hp: 100, atk: 12, exp: 80 },
-        { name: "オーク", e: "🐗", hp: 250, atk: 25, exp: 200 }
-    ];
+    const JOBS = {
+        "戦士": { hp: 200, atk: 20, critR: 5, critD: 150, eva: 5, spd: 1200, res: 10 },
+        "魔術師": { hp: 100, atk: 40, critR: 15, critD: 200, eva: 8, spd: 1500, res: 5 },
+        "暗殺者": { hp: 120, atk: 25, critR: 25, critD: 250, eva: 20, spd: 800, res: 15 }
+    };
 
-    let player = { lv: 1, exp: 0, job: "", hp: 0, maxHp: 0, atk: 0, equips: { head:null, body:null, legs:null, w1:null, w2:null } };
-    let inventory = [];
-    let isAuto = false, timer = null, enemy = null;
+    let p = { lv: 1, exp: 0, job: "", equips: { head:null, body:null, legs:null, w1:null } };
+    let inv = [], isAuto = false, timer = null, enemy = null, state = { stage: 0, kills: 0 };
 
     function gacha() {
         const keys = Object.keys(JOBS);
-        player.job = keys[Math.floor(Math.random() * keys.length)];
-        player.maxHp = JOBS[player.job].hp;
-        player.hp = player.maxHp;
-        player.atk = JOBS[player.job].atk;
-        log(`✨ ${player.job} になった！`);
+        p.job = keys[Math.floor(Math.random() * keys.length)];
+        log(`✨ ${p.job} になった！`);
         updateUI();
     }
 
-    function toggleAuto() {
-        if (!player.job) return alert("先にガチャを！");
-        isAuto = !isAuto;
-        const btn = document.getElementById("run-btn");
-        if (isAuto) {
-            btn.innerText = "🛑 探索を中止する";
-            btn.style.background = "#f44336";
-            timer = setInterval(tick, 1000);
-        } else {
-            btn.innerText = "🌲 探索を再開する";
-            btn.style.background = "#3d5afe";
-            clearInterval(timer);
-        }
+    // ステータス合算計算
+    function getStats() {
+        if (!p.job) return {};
+        const base = JOBS[p.job];
+        const eq = p.equips;
+        let bonusAtk = (eq.w1?.val || 0);
+        let bonusHp = (eq.body?.val || 0) * 10;
+        let bonusEva = (eq.legs?.val || 0);
+        let bonusRes = (eq.head?.val || 0);
+
+        return {
+            hp: base.hp + bonusHp + (p.lv * 20),
+            atk: base.atk + bonusAtk + (p.lv * 5),
+            critR: base.critR,
+            critD: base.critD,
+            eva: Math.min(50, base.eva + bonusEva), // 回避上限50%
+            spd: base.spd,
+            res: base.res + bonusRes
+        };
     }
 
     function tick() {
-        if (!enemy) spawnEnemy();
-        
-        // 攻撃計算
-        let pAtk = player.atk + (player.equips.w1?.val || 0) + (player.equips.w2?.val || 0);
-        enemy.curHp -= pAtk;
-        
+        const stats = getStats();
+        if (!enemy) {
+            enemy = { name: "スライム", hp: 50 + (state.stage * 100), atk: 10 + (state.stage * 20), curHp: 0, e: "💧" };
+            enemy.curHp = enemy.hp;
+        }
+
+        // プレイヤー攻撃
+        let dmg = stats.atk;
+        let isCrit = Math.random() * 100 < stats.critR;
+        if (isCrit) dmg = Math.floor(dmg * (stats.critD / 100));
+        enemy.curHp -= dmg;
+        log(`${isCrit ? '🔥CRITICAL! ' : ''}敵に ${dmg} ダメージ`);
+
         if (enemy.curHp <= 0) {
-            log(`🎊 ${enemy.name}を倒した！`);
-            player.exp += enemy.exp;
+            log(`🎊 撃破！`);
             if (Math.random() < 0.4) dropItem();
+            state.kills++;
+            if (state.kills >= 10) { state.stage++; state.kills = 0; log("🚩 次のステージへ！"); }
             enemy = null;
-            if (player.exp >= player.lv * 100) levelUp();
         } else {
-            let eAtk = Math.max(1, enemy.atk - ((player.equips.body?.val || 0) + (player.equips.head?.val || 0)));
-            player.hp -= eAtk;
-            if (player.hp <= 0) {
-                log("💀 敗北... 拠点へ撤退しました。");
-                enemy = null; // 敵をリセット
-                player.hp = player.maxHp; // 回復
-                toggleAuto(); // 停止
+            // 敵攻撃（回避判定）
+            if (Math.random() * 100 < stats.eva) {
+                log("💨 攻撃を回避した！");
+            } else {
+                let eDmg = Math.max(1, enemy.atk - Math.floor(stats.res / 2));
+                // 本来はここでプレイヤーHPを減らすが、簡易化のためログのみ
+                log(`🤕 ${eDmg} のダメージを受けた`);
             }
         }
         updateUI();
     }
 
-    function spawnEnemy() {
-        let base = ENEMIES[Math.min(ENEMIES.length - 1, Math.floor((player.lv-1) / 3))];
-        enemy = { ...base, curHp: base.hp };
-    }
-
     function dropItem() {
-        if (inventory.length >= 12) return log("カバンが満杯だ！");
-        const types = { head:"兜", body:"鎧", legs:"具足", w1:"剣" };
-        const part = Object.keys(types)[Math.floor(Math.random() * 4)];
-        const r = Math.random();
-        let rarity = "common", mult = 1, rName = "";
-        if (r < 0.1) { rarity = "epic"; mult = 3; rName = "伝説の"; }
-        else if (r < 0.3) { rarity = "rare"; mult = 1.5; rName = "良質な"; }
-
-        const val = Math.floor((Math.random() * 5 + player.lv) * mult);
-        const item = { id: Date.now(), part, val, rarity, name: `${rName}${types[part]}+${val}` };
-        inventory.push(item);
-        log(`<span style="color:gold">🎁 ${item.name} を拾った！</span>`);
-        updateInvUI();
-    }
-
-    function equip(id) {
-        const idx = inventory.findIndex(i => i.id === id);
-        const item = inventory[idx];
-        const old = player.equips[item.part];
-        player.equips[item.part] = item;
-        inventory.splice(idx, 1);
-        if (old) inventory.push(old);
-        updateInvUI();
+        if (inv.length >= 12) return;
+        const types = ["head", "body", "legs", "w1"];
+        const type = types[Math.floor(Math.random() * types.length)];
+        const val = Math.floor(Math.random() * 10) + (state.stage * 5) + 1;
+        const rarity = Math.random() < 0.1 ? "epic" : "common";
+        inv.push({ id: Date.now(), type, val, rarity, name: (rarity === "epic" ? "神の" : "") + type.toUpperCase() + "+" + val });
         updateUI();
     }
 
-    function discard(id) {
-        inventory = inventory.filter(i => i.id !== id);
-        updateInvUI();
-    }
-
-    function levelUp() {
-        player.lv++;
-        player.maxHp += 20; player.hp = player.maxHp; player.atk += 5;
-        log(`<span style="color:cyan">🆙 LvUP! Lv.${player.lv}</span>`);
+    function toggleAuto() {
+        if (!p.job) return alert("ガチャを回して！");
+        isAuto = !isAuto;
+        const btn = document.getElementById("run-btn");
+        if (isAuto) {
+            btn.innerText = "🛑 探索中止";
+            btn.classList.add("stop");
+            timer = setInterval(tick, getStats().spd); // 素早さで速度が変わる
+        } else {
+            btn.innerText = "⚔️ 探索開始";
+            btn.classList.remove("stop");
+            clearInterval(timer);
+        }
     }
 
     function updateUI() {
-        document.getElementById("lv").innerText = player.lv;
-        document.getElementById("job").innerText = player.job || "---";
-        document.getElementById("hp").innerText = Math.max(0, Math.floor(player.hp));
-        document.getElementById("max-hp").innerText = player.maxHp;
-        document.getElementById("atk").innerText = player.atk + (player.equips.w1?.val || 0);
-        
+        if (!p.job) return;
+        const s = getStats();
+        document.getElementById("lv").innerText = p.lv;
+        document.getElementById("job").innerText = p.job;
+        document.getElementById("st-hp").innerText = s.hp;
+        document.getElementById("st-atk").innerText = s.atk;
+        document.getElementById("st-crit-r").innerText = s.critR + "%";
+        document.getElementById("st-crit-d").innerText = s.critD + "%";
+        document.getElementById("st-eva").innerText = s.eva + "%";
+        document.getElementById("st-spd").innerText = (s.spd / 1000).toFixed(1) + "s";
+        document.getElementById("st-res").innerText = s.res + "%";
+
+        document.getElementById("eq-head").innerText = p.equips.head?.name || "なし";
+        document.getElementById("eq-body").innerText = p.equips.body?.name || "なし";
+        document.getElementById("eq-legs").innerText = p.equips.legs?.name || "なし";
+        document.getElementById("eq-w1").innerText = p.equips.w1?.name || "素手";
+
         if (enemy) {
             document.getElementById("enemy-name").innerText = enemy.name;
-            document.getElementById("enemy-emoji").innerText = enemy.e;
             document.getElementById("enemy-hp-fill").style.width = (enemy.curHp / enemy.hp * 100) + "%";
-        } else {
-            document.getElementById("enemy-name").innerText = "探索中...";
-            document.getElementById("enemy-hp-fill").style.width = "0%";
         }
+        document.getElementById("progress-text").innerText = `ボスまで ${state.kills}/10`;
+        document.getElementById("bag-count").innerText = `${inv.length}/12`;
 
-        ["head", "body", "legs", "w1"].forEach(p => {
-            document.getElementById(`eq-${p}`).innerText = player.equips[p]?.name || "なし";
-        });
-        document.getElementById("bag-count").innerText = `${inventory.length}/12`;
-    }
-
-    function updateInvUI() {
         const list = document.getElementById("inventory-list");
         list.innerHTML = "";
-        inventory.forEach(i => {
+        inv.forEach(item => {
             const d = document.createElement("div");
-            d.className = `item-card rarity-${i.rarity}`;
+            d.className = `item-card rarity-${item.rarity}`;
             d.innerHTML = `
-                <div><b>${i.name}</b> (効果: ${i.val})</div>
-                <div class="item-actions">
-                    <button class="equip" onclick="equip(${i.id})">装備</button>
-                    <button class="discard" onclick="discard(${i.id})">捨てる</button>
+                <b>${item.name}</b> (${item.type})
+                <div style="margin-top:5px;">
+                    <button onclick="equip(${item.id})" style="width:auto; padding:2px 10px;">装備</button>
+                    <button class="discard" onclick="inv=inv.filter(x=>x.id!==${item.id});updateUI();">捨</button>
                 </div>`;
             list.appendChild(d);
         });
+    }
+
+    function equip(id) {
+        const idx = inv.findIndex(x => x.id === id);
+        const it = inv[idx];
+        const old = p.equips[it.type];
+        p.equips[it.type] = it;
+        inv.splice(idx, 1);
+        if (old) inv.push(old);
+        if (isAuto) { // 素早さが変わる可能性があるのでタイマー再設定
+            clearInterval(timer);
+            timer = setInterval(tick, getStats().spd);
+        }
+        updateUI();
     }
 
     function log(m) {
